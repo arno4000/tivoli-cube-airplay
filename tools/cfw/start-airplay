@@ -1,0 +1,26 @@
+#!/system/bin/sh
+# Started by init (service airplay). Waits for Wi-Fi, then runs the AirPlay 1 receiver forever.
+
+# wlan0 must be up with a real address; p2p0 (setup hotspot) does not count.
+while true; do
+    line="$(netcfg | grep '^wlan0')"
+    case "$line" in
+        *" 0.0.0.0/"*|"") sleep 3 ;;
+        *UP*) break ;;
+        *) sleep 3 ;;
+    esac
+done
+sleep 3
+
+# The stock mDNS daemon holds the discovery port.
+stop mdnsd
+
+# Without this route, multicast goes out of p2p0 and senders never find the speaker.
+route add -net 224.0.0.0 netmask 240.0.0.0 dev wlan0
+echo cube > /proc/sys/kernel/hostname
+
+while true; do
+    /system/bin/shairport-sync -c /system/etc/sps.conf -a Cube -p 5000 -o stdout 2>/dev/null \
+        | /system/bin/pcmplay 2>/dev/null
+    sleep 3
+done

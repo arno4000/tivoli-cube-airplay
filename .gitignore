@@ -1,0 +1,7 @@
+# Build output and vendor firmware
+build/
+lsimage
+*.bin
+
+# Never commit credentials
+credentials.json
